@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from app.discovery import discover_sources
 from fastapi import FastAPI, HTTPException
+from app.research import run_research_pipeline
 
 from app.collector import collect_source
 from app.evidence import build_evidences
@@ -12,7 +13,9 @@ from app.schemas import (
     CollectResponse,
     SourceCollectionStatus,
     DiscoverSourcesRequest,
-    DiscoverSourcesResponse
+    DiscoverSourcesResponse,
+    ResearchRequest,
+    ResearchResponse
 )
 from app.scoring import calculate_scores
 
@@ -33,7 +36,8 @@ async def root():
             "POST /collect",
             "POST /analyze",
             "POST /analyze-multiple",
-            "POST /discover-sources"
+            "POST /discover-sources",
+            "POST /research"
         ]
     }
 
@@ -49,6 +53,10 @@ async def health():
 async def discover_public_sources(payload: DiscoverSourcesRequest):
     return await discover_sources(payload)
 
+
+@app.post("/research", response_model=ResearchResponse)
+async def run_research(payload: ResearchRequest):
+    return await run_research_pipeline(payload)
 
 @app.post("/collect", response_model=CollectResponse)
 async def collect_public_source(payload: CollectRequest):

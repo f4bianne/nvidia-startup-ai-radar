@@ -94,9 +94,38 @@ class DiscoveredSource(BaseModel):
     reason: str
     search_query: str | None = None
 
-
 class DiscoverSourcesResponse(BaseModel):
     startup_name: str
     queries_used: list[str]
     sources: list[DiscoveredSource]
     sources_found: int
+
+class ResearchRequest(BaseModel):
+    startup_name: str = Field(min_length=2, max_length=120)
+    sector: str | None = Field(default=None, max_length=80)
+    official_url: HttpUrl | None = None
+    max_sources: int = Field(default=5, ge=3, le=6)
+
+
+class ExcludedSource(BaseModel):
+    url: str
+    title: str
+    source_type: str
+    reason: str
+    search_query: str | None = None
+
+
+class ResearchResponse(BaseModel):
+    startup_name: str
+    queries_used: list[str]
+    candidate_sources: list[DiscoveredSource]
+    selected_sources: list[DiscoveredSource]
+    excluded_sources: list[ExcludedSource]
+    collected_at: datetime
+    sources: list[SourceCollectionStatus]
+    sources_successful: int
+    sources_failed: int
+    classification: ClassificationResult
+    evidences: list[Evidence]
+    ai_signals_found: list[str]
+    clean_text_preview: str
