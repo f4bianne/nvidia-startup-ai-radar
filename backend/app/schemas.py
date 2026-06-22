@@ -66,7 +66,6 @@ class SourceCollectionStatus(BaseModel):
     word_count: int = 0
     error: str | None = None
 
-
 class AnalyzeMultipleResponse(BaseModel):
     startup_name: str
     collected_at: datetime
@@ -77,3 +76,27 @@ class AnalyzeMultipleResponse(BaseModel):
     evidences: list[Evidence]
     ai_signals_found: list[str]
     clean_text_preview: str
+
+class DiscoverSourcesRequest(BaseModel):
+    startup_name: str = Field(min_length=2, max_length=120)
+    sector: str | None = Field(default=None, max_length=80)
+    official_url: HttpUrl | None = None
+    max_sources: int = Field(default=5, ge=3, le=6)
+
+
+class DiscoveredSource(BaseModel):
+    url: str
+    title: str
+    snippet: str | None = None
+    source_type: str
+    tier: int
+    priority: int
+    reason: str
+    search_query: str | None = None
+
+
+class DiscoverSourcesResponse(BaseModel):
+    startup_name: str
+    queries_used: list[str]
+    sources: list[DiscoveredSource]
+    sources_found: int

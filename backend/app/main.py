@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-
+from app.discovery import discover_sources
 from fastapi import FastAPI, HTTPException
 
 from app.collector import collect_source
@@ -11,6 +11,8 @@ from app.schemas import (
     CollectRequest,
     CollectResponse,
     SourceCollectionStatus,
+    DiscoverSourcesRequest,
+    DiscoverSourcesResponse
 )
 from app.scoring import calculate_scores
 
@@ -30,7 +32,8 @@ async def root():
         "available_endpoints": [
             "POST /collect",
             "POST /analyze",
-            "POST /analyze-multiple"
+            "POST /analyze-multiple",
+            "POST /discover-sources"
         ]
     }
 
@@ -38,6 +41,13 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.post(
+    "/discover-sources",
+    response_model=DiscoverSourcesResponse
+)
+async def discover_public_sources(payload: DiscoverSourcesRequest):
+    return await discover_sources(payload)
 
 
 @app.post("/collect", response_model=CollectResponse)
