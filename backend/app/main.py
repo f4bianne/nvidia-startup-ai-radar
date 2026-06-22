@@ -66,6 +66,32 @@ class AnalyzeResponse(BaseModel):
     ai_signals_found: list[str]
     clean_text_preview: str
 
+class AnalyzeMultipleRequest(BaseModel):
+    startup_name: str = Field(min_length=2, max_length=120)
+    urls: list[HttpUrl] = Field(min_length=1, max_length=6)
+
+
+class SourceCollectionStatus(BaseModel):
+    url: str
+    status: str
+    title: str | None = None
+    extraction_method: str | None = None
+    text_characters: int = 0
+    word_count: int = 0
+    error: str | None = None
+
+
+class AnalyzeMultipleResponse(BaseModel):
+    startup_name: str
+    collected_at: datetime
+    sources: list[SourceCollectionStatus]
+    sources_successful: int
+    sources_failed: int
+    classification: ClassificationResult
+    evidences: list[Evidence]
+    ai_signals_found: list[str]
+    clean_text_preview: str
+
 
 AI_KEYWORDS = [
     "inteligência artificial",
@@ -414,7 +440,8 @@ async def root():
         "status": "running",
         "available_endpoints": [
             "POST /collect",
-            "POST /analyze"
+            "POST /analyze",
+            "POST /analyze-multiple"
         ]
     }
 
@@ -457,4 +484,94 @@ async def analyze_startup(payload: CollectRequest):
         evidences=evidences,
         ai_signals_found=ai_signals,
         clean_text_preview=collected.clean_text[:1000]
+    )
+
+@app.post("/analyze-multiple", response_model=AnalyzeMultipleResponse)
+async def analyze_multiple_sources(payload: AnalyzeMultipleRequest):
+    successful_collections = []
+    source_statuses = []
+    seen_urls = set()
+
+    for url_item in payload.urls:
+        url = str(url_item)
+
+        if url in seen_urls:
+            continue
+
+        seen_urls.add(url)
+
+        try:
+            collected = await collect_source(
+                startup_name=payload.startup_name,
+                url=url
+            )
+
+            successful_collections.append(collected)
+
+            source_statuses.append(
+                SourceCollectionStatus(
+                    url=collected.source.url,
+                    status="COLLECTED",
+                    title=collected.source.title,
+                    extraction_method=collected.source.extraction_method,
+                    text_characters=collected.text_characters,
+                    word_count=collected.word_count
+                )
+            )
+
+        except HTTPException as error:
+            source_statuses.append(
+                SourceCollectionStatus(
+                    url=url,
+                    status="FAILED",
+                    error=str(error.detail)
+                )
+            )
+
+    if not successful_collections:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Nenhuma das fontes fornecidas pôde ser coletada. "
+                "Verifique as URLs ou tente outras fontes públicas."
+            )
+        )
+
+    all_evidences = []
+    all_ai_signals = []
+
+    for collected in successful_collections:
+        evidences, ai_signals = build_evidences(
+            clean_text=collected.clean_text,
+            source_url=collected.source.url
+        )
+
+        all_evidences.extend(evidences)
+        all_ai_signals.extend(ai_signals)
+
+    unique_ai_signals = sorted(set(all_ai_signals))
+
+    combined_text = "\n\n".join(
+        collection.clean_text
+        for collection in successful_collections
+    )
+
+    classification = calculate_scores(
+        clean_text=combined_text,
+        ai_signals=unique_ai_signals
+    )
+
+    successful_count = len(successful_collections)
+    failed_count = len(source_statuses) - successful_count
+
+    return AnalyzeMultipleResponse(
+        startup_name=payload.startup_name,
+        collected_at=datetime.now(timezone.utc),
+        sources=source_statuses,
+        sources_successful=successful_count,
+        sources_failed=failed_count,
+        classification=classification,
+        evidences=all_evidences,
+        ai_signals_found=unique_ai_signals,
+        clean_text_preview=combined_text[:1500]
     )
