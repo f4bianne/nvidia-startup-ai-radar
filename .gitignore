@@ -1,0 +1,13 @@
+# Ambiente virtual e segredos
+backend/.venv/
+.venv/
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Frontend, para depois
+node_modules/
+dist/
