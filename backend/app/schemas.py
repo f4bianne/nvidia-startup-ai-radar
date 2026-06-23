@@ -27,6 +27,7 @@ class Evidence(BaseModel):
     source_url: str
     status: str
     confidence: float
+    category: str
 
 
 class ScoreReason(BaseModel):
@@ -114,6 +115,27 @@ class ExcludedSource(BaseModel):
     reason: str
     search_query: str | None = None
 
+class EvidenceValidationReport(BaseModel):
+    total_received: int
+    valid_count: int
+    duplicate_count: int
+    invalid_count: int
+    invalid_reasons: list[str]
+
+
+class StartupProfile(BaseModel):
+    ai_product: list[Evidence]
+    workflow_depth: list[Evidence]
+    proprietary_data: list[Evidence]
+    governance_security: list[Evidence]
+    scale_traction: list[Evidence]
+    model_and_serving: list[Evidence]
+
+
+class Gap(BaseModel):
+    category: str
+    status: str
+    message: str
 
 class ResearchResponse(BaseModel):
     startup_name: str
@@ -127,5 +149,8 @@ class ResearchResponse(BaseModel):
     sources_failed: int
     classification: ClassificationResult
     evidences: list[Evidence]
+    evidence_validation: EvidenceValidationReport
+    profile: StartupProfile
+    gaps: list[Gap]
     ai_signals_found: list[str]
     clean_text_preview: str

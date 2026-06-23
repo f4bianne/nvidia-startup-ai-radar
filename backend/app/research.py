@@ -5,7 +5,13 @@ from fastapi import HTTPException
 
 from app.collector import collect_source
 from app.discovery import discover_sources
-from app.evidence import build_evidences
+from app.evidence import (
+    build_evidences,
+    build_gaps,
+    build_startup_profile,
+    validate_evidences,
+)
+
 from app.schemas import (
     DiscoverSourcesRequest,
     DiscoveredSource,
@@ -178,6 +184,10 @@ async def run_research_pipeline(
         all_evidences.extend(evidences)
         all_ai_signals.extend(ai_signals)
 
+        valid_evidences, evidence_validation = validate_evidences(all_evidences)
+        profile = build_startup_profile(valid_evidences)
+        gaps = build_gaps(profile)
+
     unique_ai_signals = sorted(set(all_ai_signals))
 
     combined_text = "\n\n".join(
@@ -202,7 +212,10 @@ async def run_research_pipeline(
             clean_text=combined_text,
             ai_signals=unique_ai_signals,
         ),
-        evidences=all_evidences,
+        evidences=valid_evidences,
+        evidence_validation=evidence_validation,
+        profile=profile,
+        gaps=gaps,
         ai_signals_found=unique_ai_signals,
         clean_text_preview=combined_text[:1500],
     )
