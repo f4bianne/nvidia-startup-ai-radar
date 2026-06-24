@@ -18,7 +18,13 @@ from app.schemas import (
     ResearchResponse
 )
 from app.scoring import calculate_scores
-
+from app.rag.ingest import ingest_nvidia_knowledge_base
+from app.rag.schemas import (
+    NvidiaIngestResponse,
+    NvidiaRagQueryRequest,
+    NvidiaRagQueryResponse,
+)
+from app.rag.service import run_nvidia_rag
 
 app = FastAPI(
     title="NVIDIA Startup AI Radar",
@@ -37,7 +43,9 @@ async def root():
             "POST /analyze",
             "POST /analyze-multiple",
             "POST /discover-sources",
-            "POST /research"
+            "POST /research",
+            "POST /nvidia-rag/ingest",
+            "POST /nvidia-rag"
         ]
     }
 
@@ -183,3 +191,22 @@ async def analyze_multiple_sources(payload: AnalyzeMultipleRequest):
         ai_signals_found=unique_ai_signals,
         clean_text_preview=combined_text[:1500]
     )
+
+@app.post(
+    "/nvidia-rag/ingest",
+    response_model=NvidiaIngestResponse,
+    tags=["NVIDIA RAG"],
+)
+async def ingest_nvidia_rag():
+    return await ingest_nvidia_knowledge_base()
+
+
+@app.post(
+    "/nvidia-rag",
+    response_model=NvidiaRagQueryResponse,
+    tags=["NVIDIA RAG"],
+)
+async def query_nvidia_rag(
+    payload: NvidiaRagQueryRequest,
+):
+    return run_nvidia_rag(payload)
