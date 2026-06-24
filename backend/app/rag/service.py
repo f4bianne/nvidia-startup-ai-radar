@@ -48,7 +48,8 @@ def run_nvidia_rag(
         query=payload.query,
         pipeline=(
             "BM25 + embeddings Qdrant + "
-            "Reciprocal Rank Fusion + CrossEncoder reranker"
+            "Reciprocal Rank Fusion + CrossEncoder reranker + "
+            "metadata alignment"
         ),
         retrieved_at=datetime.now(timezone.utc),
         results=results,
