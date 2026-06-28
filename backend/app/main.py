@@ -5,6 +5,9 @@ from app.research import run_research_pipeline
 from app.recommendation import generate_recommendations
 from app.briefing import build_briefing
 from app.workflow import startup_radar_graph
+from fastapi import HTTPException
+
+from app.database import check_database_connection
 
 from app.collector import collect_source
 from app.evidence import build_evidences
@@ -61,9 +64,9 @@ async def root():
             "POST /research/recommendations",
             "POST /research/briefing",
             "POST /research/full",
+            "GET /database/health",
         ]
     }
-
 
 @app.get("/health")
 async def health():
@@ -304,3 +307,20 @@ async def research_full(
         recommendations=final_state["recommendations"],
         briefing=final_state["briefing"],
     )
+
+@app.get(
+    "/database/health",
+    tags=["Database"],
+)
+async def database_health():
+    try:
+        return check_database_connection()
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Não foi possível conectar ao Supabase: "
+                f"{error}"
+            ),
+        ) from error
