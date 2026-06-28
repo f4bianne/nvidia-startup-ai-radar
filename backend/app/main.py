@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from app.research import run_research_pipeline
 from app.recommendation import generate_recommendations
 from app.briefing import build_briefing
+from app.workflow import startup_radar_graph
 
 from app.collector import collect_source
 from app.evidence import build_evidences
@@ -23,6 +24,7 @@ from app.scoring import calculate_scores
 from app.rag.ingest import ingest_nvidia_knowledge_base
 from app.rag.schemas import (
     BriefingResponse,
+    FullAnalysisResponse,
     NvidiaIngestResponse,
     NvidiaRagQueryRequest,
     NvidiaRagQueryResponse,
@@ -58,6 +60,7 @@ async def root():
             "POST /research/nvidia-context",
             "POST /research/recommendations",
             "POST /research/briefing",
+            "POST /research/full",
         ]
     }
 
@@ -275,4 +278,29 @@ async def research_briefing(
     return build_briefing(
         research_with_context=research_with_context,
         recommendation_response=recommendations,
+    )
+
+@app.post(
+    "/research/full",
+    response_model=FullAnalysisResponse,
+    tags=["Workflow"],
+)
+async def research_full(
+    payload: ResearchRequest,
+):
+    final_state = await startup_radar_graph.ainvoke(
+        {
+            "payload": payload,
+        }
+    )
+
+    research_with_context = final_state[
+        "research_with_context"
+    ]
+
+    return FullAnalysisResponse(
+        research=final_state["research"],
+        nvidia_context=research_with_context.nvidia_context,
+        recommendations=final_state["recommendations"],
+        briefing=final_state["briefing"],
     )

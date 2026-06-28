@@ -133,3 +133,9 @@ class BriefingResponse(BaseModel):
     generated_at: datetime
     recommendation_count: int
     markdown: str
+
+class FullAnalysisResponse(BaseModel):
+    research: ResearchResponse
+    nvidia_context: NvidiaContextResponse
+    recommendations: RecommendationResponse
+    briefing: BriefingResponse
