@@ -127,3 +127,9 @@ class RecommendationResponse(BaseModel):
     model: str
     recommendations: list[NvidiaRecommendation]
     limitations: list[str]
+
+class BriefingResponse(BaseModel):
+    startup_name: str
+    generated_at: datetime
+    recommendation_count: int
+    markdown: str
