@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from app.discovery import discover_sources
 from fastapi import FastAPI, HTTPException
 from app.research import run_research_pipeline
+from app.recommendation import generate_recommendations
 
 from app.collector import collect_source
 from app.evidence import build_evidences
@@ -24,6 +25,7 @@ from app.rag.schemas import (
     NvidiaRagQueryRequest,
     NvidiaRagQueryResponse,
     ResearchWithNvidiaContextResponse,
+    RecommendationResponse,
 )
 from app.rag.service import run_nvidia_rag
 
@@ -51,7 +53,8 @@ async def root():
             "POST /research",
             "POST /nvidia-rag/ingest",
             "POST /nvidia-rag",
-            "POST /research/nvidia-context"
+            "POST /research/nvidia-context",
+            "POST /research/recommendations"
         ]
     }
 
@@ -228,4 +231,22 @@ async def research_with_nvidia_context(
 
     return build_research_with_nvidia_context(
         research
+    )
+
+@app.post(
+    "/research/recommendations",
+    response_model=RecommendationResponse,
+    tags=["Recommendations"],
+)
+async def research_recommendations(
+    payload: ResearchRequest,
+):
+    research = await run_research_pipeline(payload)
+
+    research_with_context = (
+        build_research_with_nvidia_context(research)
+    )
+
+    return await generate_recommendations(
+        research_with_context
     )

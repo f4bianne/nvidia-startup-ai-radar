@@ -100,3 +100,30 @@ class NvidiaContextResponse(BaseModel):
 class ResearchWithNvidiaContextResponse(BaseModel):
     research: ResearchResponse
     nvidia_context: NvidiaContextResponse
+
+from typing import Literal
+
+
+class RecommendationCitation(BaseModel):
+    evidence_id: str
+    source_type: Literal["startup", "nvidia"]
+    source_url: str
+    quote: str
+
+
+class NvidiaRecommendation(BaseModel):
+    technology_id: str
+    technology_name: str
+    priority: Literal["ALTA", "MEDIA", "BAIXA"]
+    technical_reason: str
+    business_reason: str
+    complexity: Literal["BAIXA", "MEDIA", "ALTA"]
+    next_action: str
+    startup_evidences: list[RecommendationCitation]
+    nvidia_evidences: list[RecommendationCitation]
+
+
+class RecommendationResponse(BaseModel):
+    model: str
+    recommendations: list[NvidiaRecommendation]
+    limitations: list[str]
