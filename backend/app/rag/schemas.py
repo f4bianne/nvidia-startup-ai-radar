@@ -1,4 +1,5 @@
 from datetime import datetime
+from app.schemas import ResearchResponse
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -66,7 +67,6 @@ class HybridCandidate(BaseModel):
     fused_score: float
     rerank_score: float | None = None
 
-
 class NvidiaRagResult(BaseModel):
     technology_id: str
     technology_name: str
@@ -79,9 +79,24 @@ class NvidiaRagResult(BaseModel):
     fused_score: float
     rerank_score: float
 
-
 class NvidiaRagQueryResponse(BaseModel):
     query: str
     pipeline: str
     retrieved_at: datetime
     results: list[NvidiaRagResult]
+
+class NvidiaContextTechnology(BaseModel):
+    technology_id: str
+    technology_name: str
+    why_retrieved: list[str]
+    evidences: list[NvidiaRagResult]
+
+
+class NvidiaContextResponse(BaseModel):
+    generated_queries: list[str]
+    technologies: list[NvidiaContextTechnology]
+
+
+class ResearchWithNvidiaContextResponse(BaseModel):
+    research: ResearchResponse
+    nvidia_context: NvidiaContextResponse
