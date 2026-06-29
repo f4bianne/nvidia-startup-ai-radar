@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   createFullAnalysis,
   getAnalysis,
@@ -9,8 +11,6 @@ import {
   type StartupHistoryItem,
 } from "./api";
 import "./App.css";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 type PipelineStep = {
   title: string;
@@ -28,7 +28,8 @@ const PIPELINE_STEPS: PipelineStep[] = [
   },
   {
     title: "Validando evidências",
-    description: "Extraindo sinais, classificando evidências e identificando gaps.",
+    description:
+      "Extraindo sinais, classificando evidências e identificando gaps.",
   },
   {
     title: "Consultando NVIDIA RAG",
@@ -36,17 +37,20 @@ const PIPELINE_STEPS: PipelineStep[] = [
   },
   {
     title: "Gerando recomendações",
-    description: "Relacionando evidências da startup com tecnologias NVIDIA.",
+    description:
+      "Relacionando evidências da startup com tecnologias NVIDIA.",
   },
   {
     title: "Gerando briefing",
-    description: "Montando o relatório final e salvando a análise no histórico.",
+    description:
+      "Montando o relatório final e salvando a análise no histórico.",
   },
 ];
 
 type ResultTab =
   | "summary"
   | "recommendations"
+  | "nvidia-context"
   | "evidences"
   | "briefing";
 
@@ -107,7 +111,6 @@ function App() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingStartupHistory, setLoadingStartupHistory] =
     useState(false);
-
   const [loadingSavedAnalysis, setLoadingSavedAnalysis] =
     useState(false);
 
@@ -132,7 +135,35 @@ function App() {
   }
 
   useEffect(() => {
-    void loadHistory();
+    let isActive = true;
+
+    async function loadInitialHistory() {
+      try {
+        const savedStartups = await getStartups();
+
+        if (isActive) {
+          setStartups(savedStartups);
+        }
+      } catch (requestError) {
+        if (isActive) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Ocorreu um erro inesperado.",
+          );
+        }
+      } finally {
+        if (isActive) {
+          setLoadingHistory(false);
+        }
+      }
+    }
+
+    void loadInitialHistory();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   async function handleCreateAnalysis(event: FormEvent) {
@@ -151,6 +182,7 @@ function App() {
       setSelectedAnalysis(null);
       setSelectedStartupHistory(null);
       setPipelineStep(0);
+      setActiveResultTab("summary");
 
       stageTimer = window.setInterval(() => {
         setPipelineStep((currentStep) =>
@@ -220,6 +252,7 @@ function App() {
       const analysis = await getAnalysis(analysisId);
 
       setSelectedAnalysis(analysis);
+      setActiveResultTab("summary");
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -315,8 +348,8 @@ function App() {
             </div>
 
             <p className="pipeline-note">
-              O backend executa o fluxo completo e devolve o resultado ao
-              final da análise.
+              O backend executa o fluxo completo e devolve o resultado
+              ao final da análise.
             </p>
 
             <ol className="pipeline-steps">
@@ -531,6 +564,18 @@ function App() {
 
             <button
               className={
+                activeResultTab === "nvidia-context"
+                  ? "result-tab active"
+                  : "result-tab"
+              }
+              type="button"
+              onClick={() => setActiveResultTab("nvidia-context")}
+            >
+              Contexto NVIDIA RAG
+            </button>
+
+            <button
+              className={
                 activeResultTab === "evidences"
                   ? "result-tab active"
                   : "result-tab"
@@ -648,7 +693,6 @@ function App() {
                     >
                       <div className="recommendation-header">
                         <h4>{recommendation.technology_name}</h4>
-
                         <span>{recommendation.priority}</span>
                       </div>
 
@@ -681,47 +725,55 @@ function App() {
                           <section>
                             <h5>Evidências da startup</h5>
 
-                            {recommendation.startup_evidences.map((evidence) => (
-                              <article
-                                className="recommendation-evidence-card"
-                                key={evidence.evidence_id}
-                              >
-                                <span>{evidence.evidence_id}</span>
-
-                                <blockquote>{evidence.quote}</blockquote>
-
-                                <a
-                                  href={evidence.source_url}
-                                  target="_blank"
-                                  rel="noreferrer"
+                            {recommendation.startup_evidences.map(
+                              (evidence) => (
+                                <article
+                                  className="recommendation-evidence-card"
+                                  key={evidence.evidence_id}
                                 >
-                                  Abrir fonte
-                                </a>
-                              </article>
-                            ))}
+                                  <span>{evidence.evidence_id}</span>
+
+                                  <blockquote>
+                                    {evidence.quote}
+                                  </blockquote>
+
+                                  <a
+                                    href={evidence.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Abrir fonte
+                                  </a>
+                                </article>
+                              ),
+                            )}
                           </section>
 
                           <section>
                             <h5>Evidências NVIDIA</h5>
 
-                            {recommendation.nvidia_evidences.map((evidence) => (
-                              <article
-                                className="recommendation-evidence-card"
-                                key={evidence.evidence_id}
-                              >
-                                <span>{evidence.evidence_id}</span>
-
-                                <blockquote>{evidence.quote}</blockquote>
-
-                                <a
-                                  href={evidence.source_url}
-                                  target="_blank"
-                                  rel="noreferrer"
+                            {recommendation.nvidia_evidences.map(
+                              (evidence) => (
+                                <article
+                                  className="recommendation-evidence-card"
+                                  key={evidence.evidence_id}
                                 >
-                                  Abrir documentação NVIDIA
-                                </a>
-                              </article>
-                            ))}
+                                  <span>{evidence.evidence_id}</span>
+
+                                  <blockquote>
+                                    {evidence.quote}
+                                  </blockquote>
+
+                                  <a
+                                    href={evidence.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Abrir documentação NVIDIA
+                                  </a>
+                                </article>
+                              ),
+                            )}
                           </section>
                         </div>
                       </details>
@@ -729,6 +781,133 @@ function App() {
                   ),
                 )}
               </div>
+            </div>
+          )}
+
+          {activeResultTab === "nvidia-context" && (
+            <div className="tab-content">
+              {!selectedAnalysis.nvidia_context && (
+                <p>
+                  Esta análise não possui contexto NVIDIA RAG salvo.
+                </p>
+              )}
+
+              {selectedAnalysis.nvidia_context && (
+                <>
+                  <div className="rag-intro">
+                    <div>
+                      <p className="eyebrow">
+                        Busca híbrida + reranking
+                      </p>
+                      <h3>Contexto recuperado da base NVIDIA</h3>
+                    </div>
+
+                    <span>
+                      {
+                        selectedAnalysis.nvidia_context.technologies
+                          .length
+                      }{" "}
+                      tecnologias encontradas
+                    </span>
+                  </div>
+
+                  <details className="rag-queries">
+                    <summary>
+                      Ver consultas usadas pelo NVIDIA RAG
+                    </summary>
+
+                    <ol>
+                      {selectedAnalysis.nvidia_context.generated_queries.map(
+                        (query) => (
+                          <li key={query}>{query}</li>
+                        ),
+                      )}
+                    </ol>
+                  </details>
+
+                  <div className="rag-technology-list">
+                    {selectedAnalysis.nvidia_context.technologies.map(
+                      (technology) => (
+                        <article
+                          className="rag-technology-card"
+                          key={technology.technology_id}
+                        >
+                          <div className="rag-technology-header">
+                            <div>
+                              <p className="eyebrow">
+                                Tecnologia recuperada
+                              </p>
+                              <h4>{technology.technology_name}</h4>
+                            </div>
+
+                            <span>
+                              {technology.evidences.length} trecho
+                              {technology.evidences.length !== 1
+                                ? "s"
+                                : ""}
+                            </span>
+                          </div>
+
+                          <div className="rag-reasons">
+                            <strong>Por que foi buscada</strong>
+
+                            <ul>
+                              {technology.why_retrieved.map(
+                                (reason) => (
+                                  <li key={reason}>{reason}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+
+                          <div className="rag-evidence-list">
+                            {technology.evidences.map(
+                              (evidence, index) => (
+                                <article
+                                  className="rag-evidence-card"
+                                  key={`${evidence.source_url}-${index}`}
+                                >
+                                  <div className="rag-evidence-header">
+                                    <strong>{evidence.title}</strong>
+
+                                    <span>
+                                      Reranking:{" "}
+                                      {evidence.rerank_score.toFixed(3)}
+                                    </span>
+                                  </div>
+
+                                  <div className="rag-tags">
+                                    {evidence.tags.map((tag) => (
+                                      <span key={tag}>{tag}</span>
+                                    ))}
+                                  </div>
+
+                                  <blockquote>
+                                    {evidence.text.length > 650
+                                      ? `${evidence.text.slice(
+                                        0,
+                                        650,
+                                      )}...`
+                                      : evidence.text}
+                                  </blockquote>
+
+                                  <a
+                                    href={evidence.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Abrir documentação oficial NVIDIA
+                                  </a>
+                                </article>
+                              ),
+                            )}
+                          </div>
+                        </article>
+                      ),
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

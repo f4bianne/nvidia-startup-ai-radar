@@ -28,14 +28,22 @@ export type AnalysisHistoryItem = {
   gaps_count: number;
 };
 
-type StartupListResponse = {
-  startups: StartupHistoryItem[];
+export type CollectedSource = {
+  url: string;
+  title: string | null;
+  status: string;
+  extraction_method: string | null;
+  word_count: number | null;
+  error: string | null;
 };
 
-export type StartupAnalysesResponse = {
-  startup_id: string;
-  startup_name: string;
-  analyses: AnalysisHistoryItem[];
+export type Evidence = {
+  claim: string;
+  quote: string;
+  source_url: string;
+  status: string;
+  confidence: number;
+  category: string;
 };
 
 export type RecommendationCitation = {
@@ -57,48 +65,72 @@ export type Recommendation = {
   nvidia_evidences: RecommendationCitation[];
 };
 
-export type CollectedSource = {
-  url: string;
-  title: string | null;
-  status: string;
-  extraction_method: string | null;
-  word_count: number | null;
-  error: string | null;
+export type NvidiaRagEvidence = {
+  technology_id: string;
+  technology_name: string;
+  title: string;
+  text: string;
+  source_url: string;
+  tags: string[];
+  lexical_score: number;
+  semantic_score: number;
+  fused_score: number;
+  rerank_score: number;
 };
 
-export type Evidence = {
-  claim: string;
-  quote: string;
-  source_url: string;
-  status: string;
-  confidence: number;
-  category: string;
+export type NvidiaRagTechnology = {
+  technology_id: string;
+  technology_name: string;
+  why_retrieved: string[];
+  evidences: NvidiaRagEvidence[];
+};
+
+export type NvidiaContext = {
+  generated_queries: string[];
+  technologies: NvidiaRagTechnology[];
+};
+
+type StartupListResponse = {
+  startups: StartupHistoryItem[];
+};
+
+export type StartupAnalysesResponse = {
+  startup_id: string;
+  startup_name: string;
+  analyses: AnalysisHistoryItem[];
 };
 
 export type FullAnalysisResponse = {
   analysis_id: string;
+
   research: {
     startup_name: string;
     sources_successful: number;
     sources: CollectedSource[];
     evidences: Evidence[];
+
     classification: {
-        category: string;
-        ai_native_score: number;
-        wrapper_risk_score: number;
-        nvidia_opportunity_score: number;
+      category: string;
+      ai_native_score: number;
+      wrapper_risk_score: number;
+      nvidia_opportunity_score: number;
     };
+
     gaps: {
-        category: string;
-        status: string;
-        message: string;
+      category: string;
+      status: string;
+      message: string;
     }[];
-    };
+  };
+
+  nvidia_context?: NvidiaContext;
+
   recommendations: {
     model: string;
     recommendations: Recommendation[];
     limitations: string[];
   };
+
   briefing: {
     startup_name: string;
     generated_at: string;
@@ -107,9 +139,7 @@ export type FullAnalysisResponse = {
   };
 };
 
-export async function getStartups(): Promise<
-  StartupHistoryItem[]
-> {
+export async function getStartups(): Promise<StartupHistoryItem[]> {
   const response = await fetch(`${API_URL}/startups`);
 
   if (!response.ok) {
