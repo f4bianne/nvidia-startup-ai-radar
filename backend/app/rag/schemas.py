@@ -135,6 +135,7 @@ class BriefingResponse(BaseModel):
     markdown: str
 
 class FullAnalysisResponse(BaseModel):
+    analysis_id: str
     research: ResearchResponse
     nvidia_context: NvidiaContextResponse
     recommendations: RecommendationResponse

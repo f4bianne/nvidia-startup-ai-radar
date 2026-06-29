@@ -40,6 +40,13 @@ from app.nvidia_context import (
     build_research_with_nvidia_context,
 )
 
+from uuid import uuid4
+
+from app.persistence import (
+    PersistenceError,
+    persist_full_analysis,
+)
+
 app = FastAPI(
     title="NVIDIA Startup AI Radar",
     version="0.3.0",
@@ -301,12 +308,27 @@ async def research_full(
         "research_with_context"
     ]
 
-    return FullAnalysisResponse(
+    full_analysis = FullAnalysisResponse(
+        analysis_id=str(uuid4()),
         research=final_state["research"],
         nvidia_context=research_with_context.nvidia_context,
         recommendations=final_state["recommendations"],
         briefing=final_state["briefing"],
     )
+
+    try:
+        await persist_full_analysis(
+            final_analysis=full_analysis,
+            sector=payload.sector,
+        )
+
+    except PersistenceError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+
+    return full_analysis
 
 @app.get(
     "/database/health",
