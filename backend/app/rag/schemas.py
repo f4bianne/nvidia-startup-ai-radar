@@ -140,3 +140,43 @@ class FullAnalysisResponse(BaseModel):
     nvidia_context: NvidiaContextResponse
     recommendations: RecommendationResponse
     briefing: BriefingResponse
+
+class StartupHistoryItem(BaseModel):
+    startup_id: str
+    name: str
+    sector: str | None = None
+    created_at: datetime
+    latest_analysis_id: str | None = None
+    latest_analysis_at: datetime | None = None
+    classification_category: str | None = None
+    nvidia_opportunity_score: int | None = None
+
+
+class StartupListResponse(BaseModel):
+    startups: list[StartupHistoryItem]
+
+
+class AnalysisHistoryItem(BaseModel):
+    analysis_id: str
+    status: str
+    created_at: datetime
+    collected_at: datetime | None = None
+    sources_successful: int
+    classification_category: str | None = None
+    ai_native_score: int | None = None
+    wrapper_risk_score: int | None = None
+    nvidia_opportunity_score: int | None = None
+    gaps_count: int
+
+
+class StartupAnalysesResponse(BaseModel):
+    startup_id: str
+    startup_name: str
+    analyses: list[AnalysisHistoryItem]
+
+
+class SavedBriefingResponse(BaseModel):
+    analysis_id: str
+    startup_name: str
+    generated_at: datetime
+    markdown: str

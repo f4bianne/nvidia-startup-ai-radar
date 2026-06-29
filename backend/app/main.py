@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.discovery import discover_sources
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from app.research import run_research_pipeline
 from app.recommendation import generate_recommendations
 from app.briefing import build_briefing
@@ -33,6 +33,10 @@ from app.rag.schemas import (
     NvidiaRagQueryResponse,
     ResearchWithNvidiaContextResponse,
     RecommendationResponse,
+    AnalysisHistoryItem,
+    SavedBriefingResponse,
+    StartupAnalysesResponse,
+    StartupListResponse,
 )
 from app.rag.service import run_nvidia_rag
 
@@ -40,11 +44,20 @@ from app.nvidia_context import (
     build_research_with_nvidia_context,
 )
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from app.persistence import (
     PersistenceError,
     persist_full_analysis,
+)
+
+from app.history import (
+    HistoryError,
+    HistoryNotFoundError,
+    get_analysis,
+    get_saved_briefing,
+    list_startup_analyses,
+    list_startups,
 )
 
 app = FastAPI(
@@ -72,6 +85,10 @@ async def root():
             "POST /research/briefing",
             "POST /research/full",
             "GET /database/health",
+            "GET /startups",
+            "GET /startups/{startup_id}/analyses",
+            "GET /analyses/{analysis_id}",
+            "GET /analyses/{analysis_id}/briefing",
         ]
     }
 
@@ -345,4 +362,103 @@ async def database_health():
                 "Não foi possível conectar ao Supabase: "
                 f"{error}"
             ),
+        ) from error
+    
+@app.get(
+    "/startups",
+    response_model=StartupListResponse,
+    tags=["History"],
+)
+async def get_startups(
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+    ),
+):
+    try:
+        return await list_startups(limit)
+
+    except HistoryError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+
+
+@app.get(
+    "/startups/{startup_id}/analyses",
+    response_model=StartupAnalysesResponse,
+    tags=["History"],
+)
+async def get_startup_history(
+    startup_id: UUID,
+):
+    try:
+        return await list_startup_analyses(
+            str(startup_id)
+        )
+
+    except HistoryNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+    except HistoryError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+
+
+@app.get(
+    "/analyses/{analysis_id}",
+    response_model=FullAnalysisResponse,
+    tags=["History"],
+)
+async def get_saved_analysis(
+    analysis_id: UUID,
+):
+    try:
+        return await get_analysis(
+            str(analysis_id)
+        )
+
+    except HistoryNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+    except HistoryError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+
+
+@app.get(
+    "/analyses/{analysis_id}/briefing",
+    response_model=SavedBriefingResponse,
+    tags=["History"],
+)
+async def get_analysis_briefing(
+    analysis_id: UUID,
+):
+    try:
+        return await get_saved_briefing(
+            str(analysis_id)
+        )
+
+    except HistoryNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+    except HistoryError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
         ) from error
