@@ -1,11 +1,12 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from fastapi import HTTPException
 from qdrant_client import QdrantClient, models
 from rank_bm25 import BM25Okapi
-from typing import Any
+
 from app.rag.schemas import (
     HybridCandidate,
     NvidiaChunk,
@@ -28,6 +29,9 @@ EMBEDDING_MODEL_NAME = (
 )
 
 RRF_CONSTANT = 60
+
+MAX_CANDIDATES_PER_TECHNOLOGY = 3
+OVERFETCH_MULTIPLIER = 2
 
 _embedding_model: Any | None = None
 
@@ -69,7 +73,6 @@ def get_embedding_model() -> Any:
             _embedding_model = SentenceTransformer(
                 EMBEDDING_MODEL_NAME
             )
-
         except Exception as error:
             raise HTTPException(
                 status_code=503,
@@ -129,7 +132,7 @@ def get_qdrant_client() -> QdrantClient:
 
 
 def build_vector_index(
-    chunks: list[NvidiaChunk]
+    chunks: list[NvidiaChunk],
 ) -> None:
     client = get_qdrant_client()
 
@@ -169,7 +172,6 @@ def build_vector_index(
             collection_name=COLLECTION_NAME,
             points=points,
         )
-
     finally:
         if hasattr(client, "close"):
             client.close()
@@ -195,7 +197,6 @@ def get_bm25_ranked_chunks(
     ]
 
     bm25 = BM25Okapi(corpus)
-
     scores = bm25.get_scores(tokenize(query))
 
     ranked_indexes = sorted(
@@ -239,27 +240,62 @@ def get_semantic_ranked_chunks(
             )
 
         return ranked_chunks
-
     finally:
         if hasattr(client, "close"):
             client.close()
+
+
+def diversify_candidates(
+    candidates: list[HybridCandidate],
+    limit: int,
+) -> list[HybridCandidate]:
+    selected: list[HybridCandidate] = []
+    technology_counts: dict[str, int] = {}
+
+    for candidate in candidates:
+        if len(selected) >= limit:
+            break
+
+        current_count = technology_counts.get(
+            candidate.technology_id,
+            0,
+        )
+
+        if current_count >= MAX_CANDIDATES_PER_TECHNOLOGY:
+            continue
+
+        selected.append(candidate)
+
+        technology_counts[candidate.technology_id] = (
+            current_count + 1
+        )
+
+    return selected
 
 
 def retrieve_hybrid(
     query: str,
     candidate_limit: int,
 ) -> list[HybridCandidate]:
+    if candidate_limit <= 0:
+        return []
+
     chunks = load_chunks()
+
+    search_limit = max(
+        candidate_limit,
+        candidate_limit * OVERFETCH_MULTIPLIER,
+    )
 
     lexical_results = get_bm25_ranked_chunks(
         chunks=chunks,
         query=query,
-        limit=candidate_limit,
+        limit=search_limit,
     )
 
     semantic_results = get_semantic_ranked_chunks(
         query=query,
-        limit=candidate_limit,
+        limit=search_limit,
     )
 
     lexical_scores = {
@@ -324,8 +360,12 @@ def retrieve_hybrid(
             )
         )
 
-    return sorted(
-        candidates,
+    candidates.sort(
         key=lambda candidate: candidate.fused_score,
         reverse=True,
+    )
+
+    return diversify_candidates(
+        candidates=candidates,
+        limit=candidate_limit,
     )

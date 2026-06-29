@@ -6,6 +6,7 @@ from app.recommendation import generate_recommendations
 from app.briefing import build_briefing
 from app.workflow import startup_radar_graph
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import check_database_connection
 
@@ -64,6 +65,17 @@ app = FastAPI(
     title="NVIDIA Startup AI Radar",
     version="0.3.0",
     description="API para coletar, analisar e identificar sinais públicos sobre startups."
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
