@@ -15,8 +15,34 @@ export type StartupHistoryItem = {
   nvidia_opportunity_score: number | null;
 };
 
+export type AnalysisHistoryItem = {
+  analysis_id: string;
+  status: string;
+  created_at: string;
+  collected_at: string | null;
+  sources_successful: number;
+  classification_category: string | null;
+  ai_native_score: number | null;
+  wrapper_risk_score: number | null;
+  nvidia_opportunity_score: number | null;
+  gaps_count: number;
+};
+
 type StartupListResponse = {
   startups: StartupHistoryItem[];
+};
+
+export type StartupAnalysesResponse = {
+  startup_id: string;
+  startup_name: string;
+  analyses: AnalysisHistoryItem[];
+};
+
+export type RecommendationCitation = {
+  evidence_id: string;
+  source_type: "startup" | "nvidia";
+  source_url: string;
+  quote: string;
 };
 
 export type Recommendation = {
@@ -27,6 +53,26 @@ export type Recommendation = {
   technical_reason: string;
   business_reason: string;
   next_action: string;
+  startup_evidences: RecommendationCitation[];
+  nvidia_evidences: RecommendationCitation[];
+};
+
+export type CollectedSource = {
+  url: string;
+  title: string | null;
+  status: string;
+  extraction_method: string | null;
+  word_count: number | null;
+  error: string | null;
+};
+
+export type Evidence = {
+  claim: string;
+  quote: string;
+  source_url: string;
+  status: string;
+  confidence: number;
+  category: string;
 };
 
 export type FullAnalysisResponse = {
@@ -34,18 +80,20 @@ export type FullAnalysisResponse = {
   research: {
     startup_name: string;
     sources_successful: number;
+    sources: CollectedSource[];
+    evidences: Evidence[];
     classification: {
-      category: string;
-      ai_native_score: number;
-      wrapper_risk_score: number;
-      nvidia_opportunity_score: number;
+        category: string;
+        ai_native_score: number;
+        wrapper_risk_score: number;
+        nvidia_opportunity_score: number;
     };
     gaps: {
-      category: string;
-      status: string;
-      message: string;
+        category: string;
+        status: string;
+        message: string;
     }[];
-  };
+    };
   recommendations: {
     model: string;
     recommendations: Recommendation[];
@@ -71,6 +119,22 @@ export async function getStartups(): Promise<
   const data: StartupListResponse = await response.json();
 
   return data.startups;
+}
+
+export async function getStartupAnalyses(
+  startupId: string,
+): Promise<StartupAnalysesResponse> {
+  const response = await fetch(
+    `${API_URL}/startups/${startupId}/analyses`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível carregar as análises dessa startup.",
+    );
+  }
+
+  return response.json();
 }
 
 export async function createFullAnalysis(payload: {
