@@ -8,6 +8,7 @@ As conclusões dependem das fontes públicas encontradas e disponíveis no momen
 
 - [Objetivo do projeto](#objetivo-do-projeto)
 - [Como a solução funciona](#como-a-solução-funciona)
+- [Workflow LangGraph e responsabilidades](#workflow-langgraph-e-responsabilidades)
 - [Onde a inteligência artificial é aplicada](#onde-a-inteligência-artificial-é-aplicada)
   - [IA na recuperação de documentação NVIDIA](#1-ia-na-recuperação-de-documentação-nvidia)
   - [IA generativa nas recomendações](#2-ia-generativa-nas-recomendações)
@@ -48,10 +49,23 @@ O MVP implementa um fluxo para:
 2. O agente de pesquisa monta quatro consultas e usa a Tavily para descobrir fontes públicas. Redes sociais e plataformas de conteúdo listadas no código são removidas, há limite de duas páginas por domínio e as fontes restantes são priorizadas.
 3. O backend acessa cada página selecionada e extrai até 15.000 caracteres com Trafilatura ou, como fallback, Beautiful Soup.
 4. Regras determinísticas identificam evidências, sinais de IA e lacunas. As pontuações e a classificação (`AI-native`, `AI-enabled` ou evidência insuficiente) também são heurísticas baseadas em palavras-chave.
-5. O LangGraph encaminha o resultado ao RAG NVIDIA. Consultas derivadas do perfil combinam BM25, embeddings armazenados em Qdrant local, Reciprocal Rank Fusion, CrossEncoder e alinhamento por metadados.
+5. O workflow LangGraph encaminha o resultado ao RAG NVIDIA. Consultas derivadas do perfil combinam BM25, embeddings armazenados em Qdrant local, Reciprocal Rank Fusion, CrossEncoder e alinhamento por metadados.
 6. A NVIDIA NIM API gera recomendações limitadas às tecnologias e evidências recuperadas. O backend valida os identificadores e as citações retornadas antes de aceitar a resposta.
-7. O sistema monta um briefing em Markdown e um NVIDIA Flight Plan de 90 dias, salva o snapshot completo e seus dados relacionados no Supabase e devolve a análise à interface.
+7. O último nó do grafo monta um briefing em Markdown e um NVIDIA Flight Plan de 90 dias. Depois que o grafo termina, a rota `/research/full` cria o identificador da análise, monta a resposta final e persiste o snapshot e os registros relacionados no Supabase.
 8. A interface permite reabrir snapshots, baixar o briefing em Markdown, solicitar um PDF ao backend e comparar duas análises da mesma startup.
+
+## Workflow LangGraph e responsabilidades:
+
+O fluxo completo de `POST /research/full` usa um `StateGraph` linear. Os nomes abaixo aparecem no código como agentes, mas representam **nós especializados de workflow**; isso não significa que todos sejam agentes autônomos ou usem modelos de linguagem.
+
+| Ordem | Nó no LangGraph | Responsabilidade | Natureza da etapa |
+| ----- | --------------- | ---------------- | ----------------- |
+| 1 | `research_agent` | Executa descoberta, seleção e coleta das fontes; extrai evidências; valida duplicatas; monta o perfil; identifica lacunas; calcula classificação e scores | Busca externa, extração e regras determinísticas |
+| 2 | `nvidia_rag_agent` | Gera consultas a partir do perfil e das lacunas e recupera trechos da base documental NVIDIA | Recuperação híbrida com busca lexical, embeddings e reranking |
+| 3 | `recommendation_agent` | Envia o contexto validado à NVIDIA NIM API e valida o JSON, as tecnologias e as citações devolvidas | IA generativa com validação determinística posterior |
+| 4 | `briefing_agent` | Organiza recomendações, evidências, limitações e o plano de 90 dias | Templates e regras determinísticas |
+
+O grafo compartilha um estado tipado contendo solicitação, pesquisa, contexto NVIDIA, recomendações e briefing. Não há ramificações ou execução paralela entre os nós: a sequência é fixa. A persistência não é um quinto agente; ela é executada pela rota após `startup_radar_graph.ainvoke(...)` e remove a execução parcialmente criada se alguma gravação relacionada falhar.
 
 ## Onde a inteligência artificial é aplicada:
 
@@ -102,16 +116,18 @@ O modelo deve retornar JSON com no máximo três recomendações. Cada recomenda
 ```mermaid
 flowchart LR
     UI[Frontend React e Vite] --> API[API FastAPI]
-    API --> LG[Workflow LangGraph]
-    LG --> SEARCH[Tavily e coleta de páginas públicas]
+    API --> RESEARCH[research_agent]
+    RESEARCH --> SEARCH[Tavily e coleta de páginas públicas]
     SEARCH --> RULES[Evidências, lacunas e scoring heurístico]
-    RULES --> RAG[RAG NVIDIA]
+    RULES --> RAG[nvidia_rag_agent]
     DOCS[Documentação oficial NVIDIA] --> INGEST[Ingestão e chunking]
     INGEST --> QD[(Qdrant local)]
     QD --> RAG
-    RAG --> NIM[NVIDIA NIM API]
-    NIM --> REPORT[Recomendações, briefing e plano de 90 dias]
-    REPORT --> DB[(Supabase)]
+    RAG --> REC[recommendation_agent]
+    REC --> NIM[NVIDIA NIM API]
+    NIM --> BRIEF[briefing_agent]
+    BRIEF --> FINAL[Resposta final de /research/full]
+    FINAL --> DB[(Supabase)]
     DB --> API
     API --> PDF[Relatório PDF]
     API --> UI
@@ -145,7 +161,7 @@ flowchart LR
 | Qdrant Client | Banco vetorial local, persistido em `backend/knowledge_base/qdrant/` |
 | NVIDIA NIM API | Geração das recomendações estruturadas por modelo de linguagem |
 | Supabase/PostgreSQL | Persistência dos snapshots e dados relacionados |
-| ReportLab | Geração de PDF; importado pelo código, mas ausente de `requirements.txt` |
+| ReportLab | Geração dos relatórios PDF no backend |
 | React 19 e TypeScript | Interface web e tipagem do frontend |
 | Vite 8 | Servidor de desenvolvimento e build do frontend |
 | React Markdown e remark-gfm | Renderização do briefing Markdown na interface |
@@ -217,6 +233,8 @@ Os diretórios `backend/knowledge_base/raw/`, `processed/` e `qdrant/` são gera
 
 O Qdrant roda em modo local por meio do cliente Python; não é necessário iniciar um servidor Qdrant separado.
 
+O procedimento deste README está orientado a Windows, com PowerShell ou Git Bash. O manifesto Python inclui `pywin32==312`; a instalação integral em Linux ou macOS não está configurada nem validada no repositório atual.
+
 ## Como rodar o projeto:
 
 ### 1. Clonar o repositório:
@@ -264,12 +282,6 @@ Instale as dependências declaradas:
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-```
-
-O módulo de PDF importa `reportlab`, mas essa biblioteca ainda não está declarada em `requirements.txt`. Para que `app.main` seja importado e a API inicie no estado atual do repositório, instale-a explicitamente no ambiente virtual:
-
-```bash
-python -m pip install reportlab
 ```
 
 Copie o arquivo de exemplo para `backend/.env`:
@@ -433,7 +445,11 @@ A NVIDIA NIM API pode produzir até três recomendações, cada uma com priorida
 
 ### 7. Plano de 90 dias:
 
-O briefing inclui um plano determinístico em três fases: diagnóstico e desenho do piloto (0–30 dias), implementação e validação técnica (31–60 dias) e avaliação, escala e próximo ciclo (61–90 dias). As tecnologias são preenchidas a partir das recomendações aceitas.
+> **Diferencial:** cada análise completa transforma as recomendações em um roteiro de validação técnica e comercial para os 90 dias seguintes.
+
+O briefing inclui um plano determinístico em três fases: diagnóstico e desenho do piloto (0–30 dias), implementação e validação técnica (31–60 dias) e avaliação, escala e próximo ciclo (61–90 dias). Cada fase apresenta objetivo, ações, tecnologias NVIDIA e critérios de sucesso. As tecnologias são preenchidas a partir das recomendações aceitas.
+
+O plano é montado por regras e templates em `backend/app/briefing.py`; não é gerado livremente pela LLM e deve ser ajustado após validação com a startup.
 
 ### 8. Histórico de análises:
 
@@ -441,7 +457,32 @@ O fluxo completo salva o JSON integral e também normaliza fontes, evidências, 
 
 ### 9. Comparação visual entre snapshots:
 
-O frontend permite selecionar exatamente duas análises salvas da mesma startup. A comparação ordena os snapshots pela data do briefing e apresenta alterações nos três scores, quantidade de evidências, lacunas e tecnologias recomendadas, além de links para cada análise completa.
+> **Diferencial:** o histórico permite comparar análises realizadas em períodos distintos e transformar mudanças nas evidências públicas em pontos de atenção e próximas conversas.
+
+O botão de comparação aparece no histórico quando uma startup possui pelo menos dois snapshots. O usuário seleciona exatamente duas análises dessa mesma startup; o frontend carrega ambas por `GET /analyses/{analysis_id}`, ordena-as pela data de geração do briefing e calcula a comparação no navegador. Nenhum novo snapshot é criado e não existe endpoint específico de comparação.
+
+A tela destaca uma mudança principal segundo esta ordem definida no frontend:
+
+1. nova categoria de lacuna que precisa ser validada;
+2. nova tecnologia recomendada;
+3. redução na quantidade de evidências públicas;
+4. aumento na quantidade de evidências públicas;
+5. leitura geral estável, quando nenhuma condição anterior ocorre.
+
+O destaque é acompanhado pelos blocos **Por que isso importa**, **O que continua válido** e **Próxima conversa sugerida**. Em uma área expansível, a visualização lado a lado mostra:
+
+- perfil identificado;
+- papel da IA no produto;
+- dependência de soluções externas;
+- potencial de colaboração com NVIDIA;
+- quantidade de evidências e fontes coletadas com sucesso;
+- pontos que precisam ser confirmados;
+- tecnologias sugeridas em cada snapshot;
+- links para abrir as duas análises completas.
+
+Os três scores são apresentados nessa tela por faixas descritivas, e não como uma nova avaliação produzida durante a comparação. O destaque e os textos de continuidade/próxima conversa são construídos por regras TypeScript em `frontend/src/App.tsx`.
+
+Mudanças isoladas nos scores aparecem na visualização lado a lado, mas não participam da regra que escolhe o destaque principal.
 
 Diferenças podem resultar de fontes novas, páginas indisponíveis, variação da busca/coleta ou mudanças reais na startup. Portanto, a comparação não deve ser usada isoladamente como prova de evolução ou piora.
 
@@ -482,7 +523,15 @@ Esse comando serve o bundle para inspeção local. Na porta padrão do preview (
 
 ### Backend:
 
-Não há suíte de testes, configuração de lint, formatação ou checagem de tipos versionada para o backend. A verificação operacional disponível é iniciar a API, consultar o health check simples e, com o Supabase configurado, testar a conexão:
+Não há suíte de testes, configuração de lint, formatação ou checagem de tipos versionada para o backend. Depois de instalar `requirements.txt`, é possível verificar a consistência das dependências e a importação da aplicação sem iniciar serviços externos:
+
+```bash
+cd backend
+python -m pip check
+python -c "import app.main; print('Backend importado com sucesso')"
+```
+
+A verificação operacional disponível é iniciar a API, consultar o health check simples e, com o Supabase configurado, testar a conexão:
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -510,12 +559,12 @@ Invoke-RestMethod http://127.0.0.1:8000/database/health
 - O fluxo completo exige Tavily, NVIDIA API, base RAG ingerida e Supabase. Falha na persistência faz `POST /research/full` retornar erro, mesmo após as etapas analíticas terem sido executadas.
 - A API não implementa autenticação, autorização por usuário, rate limiting ou isolamento multi-tenant.
 - A configuração CORS está fixa para o Vite local na porta 5173.
-- `ReportLab` é necessário já na importação da API, mas não está declarado em `backend/requirements.txt`; a instalação manual descrita neste README é necessária no estado atual.
+- O manifesto Python inclui `pywin32`; o procedimento de instalação atual é voltado a Windows e não documenta uma configuração equivalente validada para Linux ou macOS.
 - Não há testes automatizados versionados para backend ou frontend.
 
 ## Possíveis evoluções:
 
-As três ideias de evoluções abaixo não fazem parte da versão atual do MVP. Elas representam possibilidades de produto para transformar a análise pontual de startups em um fluxo mais contínuo, colaborativo e útil para priorização técnica e comercial.
+As três ideias de evoluções abaixo não fazem parte da versão atual do MVP, elas representam possibilidades de produto para transformar a análise pontual de startups em um fluxo mais contínuo, colaborativo e útil para priorização técnica e comercial.
 
 | Evolução | O que seria entregue | Valor gerado |
 | --- | --- | --- |
