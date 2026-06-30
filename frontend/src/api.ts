@@ -100,6 +100,21 @@ export type StartupAnalysesResponse = {
   analyses: AnalysisHistoryItem[];
 };
 
+export type FlightPlanPhase = {
+  period: "0-30 dias" | "31-60 dias" | "61-90 dias";
+  title: string;
+  objective: string;
+  actions: string[];
+  nvidia_technologies: string[];
+  success_criteria: string[];
+};
+
+export type FlightPlan = {
+  title: string;
+  summary: string;
+  phases: FlightPlanPhase[];
+};
+
 export type FullAnalysisResponse = {
   analysis_id: string;
 
@@ -136,6 +151,7 @@ export type FullAnalysisResponse = {
     generated_at: string;
     recommendation_count: number;
     markdown: string;
+    flight_plan?: FlightPlan;
   };
 };
 

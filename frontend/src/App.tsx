@@ -51,6 +51,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
 type ResultTab =
   | "summary"
   | "recommendations"
+  | "flight-plan"
   | "nvidia-context"
   | "evidences"
   | "briefing";
@@ -186,32 +187,32 @@ function App() {
   }, []);
 
   async function handleDownloadPdf() {
-  if (!selectedAnalysis) {
-    return;
+    if (!selectedAnalysis) {
+      return;
+    }
+
+    try {
+      setError("");
+      setLoadingPdf(true);
+
+      const pdf = await downloadAnalysisPdf(
+        selectedAnalysis.analysis_id,
+      );
+
+      savePdfReport(
+        pdf,
+        selectedAnalysis.research.startup_name,
+      );
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível baixar o relatório em PDF.",
+      );
+    } finally {
+      setLoadingPdf(false);
+    }
   }
-
-  try {
-    setError("");
-    setLoadingPdf(true);
-
-    const pdf = await downloadAnalysisPdf(
-      selectedAnalysis.analysis_id,
-    );
-
-    savePdfReport(
-      pdf,
-      selectedAnalysis.research.startup_name,
-    );
-  } catch (requestError) {
-    setError(
-      requestError instanceof Error
-        ? requestError.message
-        : "Não foi possível baixar o relatório em PDF.",
-    );
-  } finally {
-    setLoadingPdf(false);
-  }
-}
 
   async function handleCreateAnalysis(event: FormEvent) {
     event.preventDefault();
@@ -623,6 +624,18 @@ function App() {
 
             <button
               className={
+                activeResultTab === "flight-plan"
+                  ? "result-tab active"
+                  : "result-tab"
+              }
+              type="button"
+              onClick={() => setActiveResultTab("flight-plan")}
+            >
+              Flight Plan
+            </button>
+
+            <button
+              className={
                 activeResultTab === "nvidia-context"
                   ? "result-tab active"
                   : "result-tab"
@@ -840,6 +853,93 @@ function App() {
                   ),
                 )}
               </div>
+            </div>
+          )}
+
+          {activeResultTab === "flight-plan" && (
+            <div className="tab-content">
+              {!selectedAnalysis.briefing.flight_plan ||
+                selectedAnalysis.briefing.flight_plan.phases.length === 0 ? (
+                <p>
+                  Esta análise foi salva antes da criação do Flight Plan.
+                  Faça uma nova análise para gerar o plano de 90 dias.
+                </p>
+              ) : (
+                <>
+                  <div className="flight-plan-intro">
+                    <div>
+                      <p className="eyebrow">Plano técnico e comercial</p>
+                      <h3>
+                        {selectedAnalysis.briefing.flight_plan.title}
+                      </h3>
+                    </div>
+
+                    <span>
+                      {selectedAnalysis.briefing.flight_plan.phases.length} fases
+                    </span>
+                  </div>
+
+                  <p className="flight-plan-summary">
+                    {selectedAnalysis.briefing.flight_plan.summary}
+                  </p>
+
+                  <div className="flight-plan-timeline">
+                    {selectedAnalysis.briefing.flight_plan.phases.map(
+                      (phase, index) => (
+                        <article
+                          className="flight-plan-phase"
+                          key={phase.period}
+                        >
+                          <div className="flight-plan-marker">
+                            <span>{index + 1}</span>
+                            <strong>{phase.period}</strong>
+                          </div>
+
+                          <div className="flight-plan-card">
+                            <h4>{phase.title}</h4>
+
+                            <p>
+                              <strong>Objetivo:</strong> {phase.objective}
+                            </p>
+
+                            <div className="flight-plan-section">
+                              <strong>Ações</strong>
+
+                              <ul>
+                                {phase.actions.map((action) => (
+                                  <li key={action}>{action}</li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="flight-plan-section">
+                              <strong>Tecnologias NVIDIA relacionadas</strong>
+
+                              <div className="flight-plan-technologies">
+                                {phase.nvidia_technologies.map(
+                                  (technology) => (
+                                    <span key={technology}>{technology}</span>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flight-plan-section">
+                              <strong>Critérios de sucesso</strong>
+
+                              <ul>
+                                {phase.success_criteria.map((criterion) => (
+                                  <li key={criterion}>{criterion}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </article>
+                      ),
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
