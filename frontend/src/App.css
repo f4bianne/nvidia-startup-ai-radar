@@ -1044,3 +1044,487 @@ input {
     text-align: left;
   }
 }
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.active-history-action {
+  border-color: #2b5cd9;
+  background: #eaf0ff;
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.active-history-action {
+  border-color: #2b5cd9;
+  background: #eaf0ff;
+}
+
+.comparison-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.comparison-selection-bar p {
+  margin: 6px 0 0;
+  color: #56647c;
+  line-height: 1.55;
+}
+
+.comparison-mode-card {
+  border-style: dashed;
+}
+
+.comparison-selected-card {
+  border-color: #2b5cd9;
+  background: #f4f7ff;
+  box-shadow: 0 8px 18px rgb(43 92 217 / 10%);
+}
+
+.comparison-card-label {
+  display: inline-block;
+  margin-top: 10px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #eaf0ff;
+  color: #2b5cd9;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.comparison-panel {
+  border-color: #bfdbfe;
+}
+
+.comparison-disclaimer {
+  margin: 0 0 20px;
+  border-left: 4px solid #2b5cd9;
+  padding: 12px 16px;
+  background: #f4f7ff;
+  color: #56647c;
+  line-height: 1.6;
+}
+
+.comparison-now {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.comparison-now-header h3 {
+  margin: 6px 0 0;
+  color: #172033;
+}
+
+.comparison-highlight {
+  display: grid;
+  gap: 8px;
+  border-left: 6px solid #64748b;
+  border-radius: 14px;
+  padding: 22px;
+  background: #ffffff;
+}
+
+.comparison-highlight.attention {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
+.comparison-highlight.positive {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.comparison-highlight.neutral {
+  border-left-color: #2b5cd9;
+  background: #f4f7ff;
+}
+
+.comparison-highlight span,
+.comparison-action-card > span {
+  color: #62708a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comparison-highlight strong {
+  color: #172033;
+  font-size: 1.25rem;
+}
+
+.comparison-highlight p {
+  max-width: 820px;
+  margin: 0;
+  color: #44516a;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.comparison-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.comparison-action-card {
+  display: grid;
+  gap: 9px;
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.comparison-action-card strong {
+  color: #172033;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.comparison-action-card p {
+  margin: 0;
+  color: #56647c;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.comparison-action-card.attention {
+  border-top: 4px solid #f97316;
+}
+
+.comparison-action-card.neutral {
+  border-top: 4px solid #2b5cd9;
+}
+
+.comparison-action-card.positive {
+  border-top: 4px solid #16a34a;
+}
+
+.comparison-supporting-data {
+  margin-top: 18px;
+  border: 1px solid #dbe5f4;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.comparison-supporting-data summary {
+  cursor: pointer;
+  color: #2b5cd9;
+  font-weight: 800;
+}
+
+.comparison-supporting-data > p {
+  margin: 12px 0 0;
+  color: #56647c;
+  line-height: 1.55;
+}
+
+.comparison-stage-grid,
+.comparison-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.comparison-stage-card,
+.comparison-support-card {
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.comparison-stage-card.current {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.comparison-stage-card {
+  display: grid;
+  gap: 8px;
+}
+
+.comparison-stage-card span,
+.comparison-support-card > span {
+  color: #62708a;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.comparison-stage-card p,
+.comparison-support-card p {
+  margin: 0;
+  color: #56647c;
+  line-height: 1.5;
+}
+
+.comparison-stage-card button {
+  width: fit-content;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+.comparison-support-card {
+  display: grid;
+  gap: 8px;
+}
+
+.comparison-topic-item {
+  border-left: 3px solid #f97316;
+  padding-left: 10px;
+}
+
+.comparison-topic-item strong {
+  color: #9a3412;
+}
+
+.comparison-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comparison-chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #eaf0ff;
+  color: #3556a8;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.comparison-chip.added {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+@media (max-width: 800px) {
+  .history-actions,
+  .comparison-selection-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .comparison-action-grid,
+  .comparison-stage-grid,
+  .comparison-support-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparison-visual-details {
+  padding: 0;
+  overflow: hidden;
+}
+
+.comparison-visual-details summary {
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  padding: 18px;
+  color: #2b5cd9;
+  font-weight: 800;
+}
+
+.comparison-visual-details summary small {
+  color: #62708a;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.comparison-visual-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.comparison-visual-details[open] summary {
+  border-bottom: 1px solid #dbe5f4;
+  background: #f8fbff;
+}
+
+.comparison-visual-header {
+  display: grid;
+  grid-template-columns: 280px 1fr 1fr;
+  border-bottom: 1px solid #e3e8f0;
+  background: #f8fafc;
+}
+
+.comparison-visual-header-label,
+.comparison-visual-header-old,
+.comparison-visual-header-new {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+}
+
+.comparison-visual-header-label {
+  color: #56647c;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.comparison-visual-header-old {
+  border-left: 1px solid #e3e8f0;
+  color: #475569;
+}
+
+.comparison-visual-header-new {
+  border-left: 1px solid #dbe5f4;
+  background: #f4f7ff;
+  color: #2b5cd9;
+}
+
+.comparison-visual-header-old span,
+.comparison-visual-header-new span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comparison-visual-header-old strong,
+.comparison-visual-header-new strong {
+  font-size: 0.9rem;
+}
+
+.comparison-visual-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  border-bottom: 1px solid #e3e8f0;
+}
+
+.comparison-visual-label {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.comparison-visual-label strong {
+  color: #172033;
+}
+
+.comparison-visual-label span {
+  color: #62708a;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.comparison-visual-values {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.comparison-visual-value {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 96px;
+  padding: 18px;
+}
+
+.comparison-visual-value.old {
+  border-left: 1px solid #e3e8f0;
+  background: #ffffff;
+}
+
+.comparison-visual-value.new {
+  border-left: 1px solid #dbe5f4;
+  background: #f8fbff;
+}
+
+.comparison-visual-value strong {
+  color: #172033;
+  line-height: 1.45;
+}
+
+.comparison-visual-value p {
+  margin: 0;
+  color: #62708a;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.comparison-value-caption {
+  display: none;
+  color: #62708a;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comparison-topic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comparison-chip.attention {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.comparison-analysis-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+@media (max-width: 800px) {
+  .comparison-visual-header {
+    display: none;
+  }
+
+  .comparison-visual-row {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-visual-label {
+    padding-bottom: 12px;
+  }
+
+  .comparison-visual-values {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-visual-value.old,
+  .comparison-visual-value.new {
+    border-left: 0;
+    border-top: 1px solid #e3e8f0;
+  }
+
+  .comparison-value-caption {
+    display: block;
+  }
+
+  .comparison-analysis-links {
+    flex-direction: column;
+  }
+
+  .comparison-analysis-links button {
+    width: 100%;
+  }
+}
