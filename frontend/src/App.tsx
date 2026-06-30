@@ -473,6 +473,8 @@ function App() {
     [],
   );
 
+  const [startupSearch, setStartupSearch] = useState("");
+
   const [pipelineStep, setPipelineStep] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(false);
 
@@ -505,6 +507,12 @@ function App() {
     useState(false);
 
   const [error, setError] = useState("");
+
+  const filteredStartups = startups.filter((startup) =>
+    startup.name
+      .toLowerCase()
+      .includes(startupSearch.trim().toLowerCase()),
+  );
 
   async function loadHistory() {
     try {
@@ -906,42 +914,58 @@ function App() {
         )}
 
         {!loadingHistory && startups.length > 0 && (
-          <div className="startup-list">
-            {startups.map((startup) => (
-              <button
-                className="startup-card"
-                key={startup.startup_id}
-                type="button"
-                onClick={() =>
-                  void handleOpenStartupHistory(startup)
+          <>
+            <div className="startup-search">
+              <input
+                type="search"
+                placeholder="Buscar startup analisada..."
+                value={startupSearch}
+                onChange={(event) =>
+                  setStartupSearch(event.target.value)
                 }
-              >
-                <div>
-                  <h3>{startup.name}</h3>
+              />
+            </div>
 
-                  <p>{startup.sector || "Setor não informado"}</p>
+            {filteredStartups.length === 0 ? (
+              <p>Nenhuma startup encontrada.</p>
+            ) : (
+              <div className="startup-list">
+                {filteredStartups.map((startup) => (
+                  <button
+                    className="startup-card"
+                    key={startup.startup_id}
+                    type="button"
+                    onClick={() =>
+                      void handleOpenStartupHistory(startup)
+                    }
+                  >
+                    <div>
+                      <h3>{startup.name}</h3>
 
-                  <small>
-                    Última análise:{" "}
-                    {formatDate(startup.latest_analysis_at)}
-                  </small>
-                </div>
+                      <p>{startup.sector || "Setor não informado"}</p>
 
-                <div className="startup-meta">
-                  <span>
-                    {formatClassification(
-                      startup.classification_category,
-                    )}
-                  </span>
+                      <small>
+                        Última análise:{" "}
+                        {formatDate(startup.latest_analysis_at)}
+                      </small>
+                    </div>
 
-                  <strong>
-                    Potencial NVIDIA:{" "}
-                    {startup.nvidia_opportunity_score ?? "-"}
-                  </strong>
-                </div>
-              </button>
-            ))}
-          </div>
+                    <div className="startup-meta">
+                      <span>
+                        {startup.classification_category ||
+                          "Sem classificação"}
+                      </span>
+
+                      <strong>
+                        Oportunidade NVIDIA:{" "}
+                        {startup.nvidia_opportunity_score ?? "-"}
+                      </strong>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -1150,7 +1174,7 @@ function App() {
                     <p className="eyebrow">
                       Principal mudança na análise recente:
                     </p>
-                    
+
                   </div>
 
                   <article
@@ -1465,10 +1489,10 @@ function App() {
                         <div className="comparison-topic-list">
                           {comparison.older.research.gaps.length ===
                             0 && (
-                            <p>
-                              Nenhum ponto adicional identificado.
-                            </p>
-                          )}
+                              <p>
+                                Nenhum ponto adicional identificado.
+                              </p>
+                            )}
 
                           {comparison.older.research.gaps.map(
                             (gap, index) => (
@@ -1491,10 +1515,10 @@ function App() {
                         <div className="comparison-topic-list">
                           {comparison.newer.research.gaps.length ===
                             0 && (
-                            <p>
-                              Nenhum ponto adicional identificado.
-                            </p>
-                          )}
+                              <p>
+                                Nenhum ponto adicional identificado.
+                              </p>
+                            )}
 
                           {comparison.newer.research.gaps.map(
                             (gap, index) => (
@@ -1909,7 +1933,7 @@ function App() {
           {activeResultTab === "flight-plan" && (
             <div className="tab-content">
               {!selectedAnalysis.briefing.flight_plan ||
-              selectedAnalysis.briefing.flight_plan.phases.length === 0 ? (
+                selectedAnalysis.briefing.flight_plan.phases.length === 0 ? (
                 <p>
                   Esta análise foi salva antes da criação do plano de 90
                   dias. Faça uma nova análise para gerar o plano.
@@ -2126,9 +2150,9 @@ function App() {
                                   <blockquote>
                                     {evidence.text.length > 650
                                       ? `${evidence.text.slice(
-                                          0,
-                                          650,
-                                        )}...`
+                                        0,
+                                        650,
+                                      )}...`
                                       : evidence.text}
                                   </blockquote>
 

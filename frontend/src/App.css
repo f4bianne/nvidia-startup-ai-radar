@@ -1563,3 +1563,7 @@ button.comparison-selected-card:hover:not(:disabled),
     width: 100%;
   }
 }
+
+.startup-search {
+  margin-bottom: 16px;
+}
