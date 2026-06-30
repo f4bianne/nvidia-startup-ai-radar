@@ -509,6 +509,7 @@ async def download_analysis_report(
                 "Content-Disposition": (
                     f'attachment; filename="{filename}"'
                 ),
+                "Cache-Control": "no-store, max-age=0",
             },
         )
 

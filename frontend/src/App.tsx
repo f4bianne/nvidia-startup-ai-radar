@@ -777,10 +777,6 @@ function App() {
           Inteligência para identificar oportunidades em startups.
         </h1>
 
-        <p>
-          Pesquisa pública, fontes verificáveis, documentação oficial
-          NVIDIA e sugestões organizadas para apoiar decisões.
-        </p>
       </header>
 
       <section className="panel">
@@ -1127,11 +1123,6 @@ function App() {
                     <p className="eyebrow">
                       Comparação entre análises:
                     </p>
-
-                    <h2>
-                      O que mudou agora em{" "}
-                      {comparison.newer.research.startup_name}
-                    </h2>
                   </div>
 
                   <button
@@ -1159,8 +1150,7 @@ function App() {
                     <p className="eyebrow">
                       Principal mudança na análise recente:
                     </p>
-
-                    <h3>O que merece atenção agora</h3>
+                    
                   </div>
 
                   <article
@@ -1636,7 +1626,7 @@ function App() {
                   )
                 }
               >
-                Baixar relatório em texto
+                Baixar relatório em .md
               </button>
 
               <button
@@ -1673,7 +1663,7 @@ function App() {
               type="button"
               onClick={() => setActiveResultTab("recommendations")}
             >
-              Sugestões de tecnologia
+              Tecnologias NVIDIA
             </button>
 
             <button

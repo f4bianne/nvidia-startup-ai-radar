@@ -24,6 +24,12 @@ from app.briefing import build_flight_plan, shorten_quote
 from app.rag.schemas import FullAnalysisResponse
 
 
+PDF_TEXT_PRIMARY = colors.HexColor("#000000")
+PDF_TEXT_SECONDARY = colors.HexColor("#3F3F3D")
+PDF_TEXT_MUTED = colors.HexColor("#5E5C63")
+PDF_TEXT_ACCENT = colors.HexColor("#557B1E")
+
+
 class PdfReportError(Exception):
     pass
 
@@ -60,7 +66,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=24,
             leading=29,
-            textColor=colors.HexColor("#172033"),
+            textColor=PDF_TEXT_PRIMARY,
             spaceAfter=8,
         ),
         "cover_subtitle": ParagraphStyle(
@@ -69,7 +75,7 @@ def build_styles():
             fontName="Helvetica",
             fontSize=11,
             leading=16,
-            textColor=colors.HexColor("#56647C"),
+            textColor=PDF_TEXT_MUTED,
             spaceAfter=12,
         ),
         "section": ParagraphStyle(
@@ -78,7 +84,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=15,
             leading=20,
-            textColor=colors.HexColor("#172033"),
+            textColor=PDF_TEXT_PRIMARY,
             spaceBefore=16,
             spaceAfter=9,
         ),
@@ -88,7 +94,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=11,
             leading=15,
-            textColor=colors.HexColor("#2B5CD9"),
+            textColor=PDF_TEXT_ACCENT,
             spaceBefore=12,
             spaceAfter=6,
         ),
@@ -98,7 +104,7 @@ def build_styles():
             fontName="Helvetica",
             fontSize=9.4,
             leading=14,
-            textColor=colors.HexColor("#33415C"),
+            textColor=PDF_TEXT_SECONDARY,
             spaceAfter=6,
         ),
         "small": ParagraphStyle(
@@ -107,7 +113,7 @@ def build_styles():
             fontName="Helvetica",
             fontSize=8.2,
             leading=11.5,
-            textColor=colors.HexColor("#56647C"),
+            textColor=PDF_TEXT_MUTED,
             spaceAfter=5,
         ),
         "metric_label": ParagraphStyle(
@@ -116,7 +122,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=8,
             leading=10,
-            textColor=colors.HexColor("#56647C"),
+            textColor=PDF_TEXT_MUTED,
             alignment=TA_CENTER,
         ),
         "metric_value": ParagraphStyle(
@@ -125,7 +131,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=16,
             leading=20,
-            textColor=colors.HexColor("#172033"),
+            textColor=PDF_TEXT_PRIMARY,
             alignment=TA_CENTER,
         ),
         "quote": ParagraphStyle(
@@ -135,7 +141,7 @@ def build_styles():
             fontSize=8.7,
             leading=12.5,
             leftIndent=10,
-            textColor=colors.HexColor("#44516A"),
+            textColor=PDF_TEXT_MUTED,
             spaceAfter=5,
         ),
     }
@@ -146,7 +152,7 @@ def add_page_number(canvas, document) -> None:
     canvas.setStrokeColor(colors.HexColor("#E3E8F0"))
     canvas.line(18 * mm, 15 * mm, A4[0] - 18 * mm, 15 * mm)
 
-    canvas.setFillColor(colors.HexColor("#62708A"))
+    canvas.setFillColor(PDF_TEXT_MUTED)
     canvas.setFont("Helvetica", 8)
 
     canvas.drawString(
@@ -193,7 +199,7 @@ def add_evidence_section(
 
         source = Paragraph(
             (
-                '<font color="#56647C">'
+                '<font color="#557B1E">'
                 f'Fonte: <link href="{url}">{label}</link>'
                 "</font>"
             ),

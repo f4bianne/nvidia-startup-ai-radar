@@ -1,7 +1,8 @@
 :root {
+  color-scheme: dark;
   font-family: Arial, Helvetica, sans-serif;
-  color: #172033;
-  background: #f6f8fb;
+  color: #f2f3ed;
+  background: #151713;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -15,5 +16,11 @@ body,
 }
 
 body {
-  background: #f6f8fb;
+  background:
+    radial-gradient(
+      circle at 92% -10%,
+      rgb(126 168 77 / 10%),
+      transparent 32%
+    ),
+    linear-gradient(145deg, #151713 0%, #1a1c17 55%, #12140f 100%);
 }

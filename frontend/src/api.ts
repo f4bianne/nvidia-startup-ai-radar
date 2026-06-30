@@ -226,6 +226,7 @@ export async function downloadAnalysisPdf(
 ): Promise<Blob> {
   const response = await fetch(
     `${API_URL}/analyses/${analysisId}/report.pdf`,
+    { cache: "no-store" },
   );
 
   if (!response.ok) {
