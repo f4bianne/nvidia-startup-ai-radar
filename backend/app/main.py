@@ -61,6 +61,14 @@ from app.history import (
     list_startups,
 )
 
+from fastapi.responses import StreamingResponse
+
+from app.pdf_report import (
+    PdfReportError,
+    build_full_analysis_pdf,
+    safe_pdf_filename,
+)
+
 app = FastAPI(
     title="NVIDIA Startup AI Radar",
     version="0.3.0",
@@ -101,6 +109,8 @@ async def root():
             "GET /startups/{startup_id}/analyses",
             "GET /analyses/{analysis_id}",
             "GET /analyses/{analysis_id}/briefing",
+            "GET /analyses/{analysis_id}/full"
+            "GET /analyses/{analysis_id}/report.pdf",
         ]
     }
 
@@ -472,5 +482,50 @@ async def get_analysis_briefing(
     except HistoryError as error:
         raise HTTPException(
             status_code=503,
+            detail=str(error),
+        ) from error
+    
+@app.get(
+    "/analyses/{analysis_id}/report.pdf",
+    tags=["Reports"],
+)
+async def download_analysis_report(
+    analysis_id: UUID,
+):
+    try:
+        analysis = await get_analysis(str(analysis_id))
+
+        pdf_content = build_full_analysis_pdf(analysis)
+
+        filename = (
+            "nvidia-startup-radar-"
+            f"{safe_pdf_filename(analysis.research.startup_name)}.pdf"
+        )
+
+        return StreamingResponse(
+            iter([pdf_content]),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="{filename}"'
+                ),
+            },
+        )
+
+    except HistoryNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+    except HistoryError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+
+    except PdfReportError as error:
+        raise HTTPException(
+            status_code=500,
             detail=str(error),
         ) from error

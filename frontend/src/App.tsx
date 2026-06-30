@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   createFullAnalysis,
+  downloadAnalysisPdf,
   getAnalysis,
   getStartupAnalyses,
   getStartups,
@@ -85,10 +86,28 @@ function downloadBriefing(markdown: string, startupName: string) {
   URL.revokeObjectURL(url);
 }
 
+function savePdfReport(pdf: Blob, startupName: string) {
+  const url = URL.createObjectURL(pdf);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `relatorio-nvidia-${startupName
+    .toLowerCase()
+    .replace(/\s+/g, "-")}.pdf`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 function App() {
   const [startups, setStartups] = useState<StartupHistoryItem[]>(
     [],
   );
+
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   const [pipelineStep, setPipelineStep] = useState(0);
 
@@ -165,6 +184,34 @@ function App() {
       isActive = false;
     };
   }, []);
+
+  async function handleDownloadPdf() {
+  if (!selectedAnalysis) {
+    return;
+  }
+
+  try {
+    setError("");
+    setLoadingPdf(true);
+
+    const pdf = await downloadAnalysisPdf(
+      selectedAnalysis.analysis_id,
+    );
+
+    savePdfReport(
+      pdf,
+      selectedAnalysis.research.startup_name,
+    );
+  } catch (requestError) {
+    setError(
+      requestError instanceof Error
+        ? requestError.message
+        : "Não foi possível baixar o relatório em PDF.",
+    );
+  } finally {
+    setLoadingPdf(false);
+  }
+}
 
   async function handleCreateAnalysis(event: FormEvent) {
     event.preventDefault();
@@ -524,17 +571,29 @@ function App() {
               <h2>{selectedAnalysis.research.startup_name}</h2>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                downloadBriefing(
-                  selectedAnalysis.briefing.markdown,
-                  selectedAnalysis.research.startup_name,
-                )
-              }
-            >
-              Baixar briefing .md
-            </button>
+            <div className="result-actions">
+              <button
+                type="button"
+                onClick={() =>
+                  downloadBriefing(
+                    selectedAnalysis.briefing.markdown,
+                    selectedAnalysis.research.startup_name,
+                  )
+                }
+              >
+                Baixar briefing .md
+              </button>
+
+              <button
+                type="button"
+                disabled={loadingPdf}
+                onClick={() => void handleDownloadPdf()}
+              >
+                {loadingPdf
+                  ? "Gerando PDF..."
+                  : "Baixar relatório PDF"}
+              </button>
+            </div>
           </div>
 
           <div className="result-tabs">

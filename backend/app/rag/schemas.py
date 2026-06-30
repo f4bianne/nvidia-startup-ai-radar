@@ -1,7 +1,9 @@
 from datetime import datetime
-from app.schemas import ResearchResponse
+from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl
+
+from app.schemas import ResearchResponse
 
 
 class NvidiaSource(BaseModel):
@@ -67,6 +69,7 @@ class HybridCandidate(BaseModel):
     fused_score: float
     rerank_score: float | None = None
 
+
 class NvidiaRagResult(BaseModel):
     technology_id: str
     technology_name: str
@@ -79,11 +82,13 @@ class NvidiaRagResult(BaseModel):
     fused_score: float
     rerank_score: float
 
+
 class NvidiaRagQueryResponse(BaseModel):
     query: str
     pipeline: str
     retrieved_at: datetime
     results: list[NvidiaRagResult]
+
 
 class NvidiaContextTechnology(BaseModel):
     technology_id: str
@@ -100,8 +105,6 @@ class NvidiaContextResponse(BaseModel):
 class ResearchWithNvidiaContextResponse(BaseModel):
     research: ResearchResponse
     nvidia_context: NvidiaContextResponse
-
-from typing import Literal
 
 
 class RecommendationCitation(BaseModel):
@@ -128,11 +131,31 @@ class RecommendationResponse(BaseModel):
     recommendations: list[NvidiaRecommendation]
     limitations: list[str]
 
+
+class FlightPlanPhase(BaseModel):
+    period: Literal["0-30 dias", "31-60 dias", "61-90 dias"]
+    title: str
+    objective: str
+    actions: list[str] = Field(default_factory=list)
+    nvidia_technologies: list[str] = Field(default_factory=list)
+    success_criteria: list[str] = Field(default_factory=list)
+
+
+class FlightPlanResponse(BaseModel):
+    title: str = "NVIDIA Flight Plan - 90 dias"
+    summary: str = ""
+    phases: list[FlightPlanPhase] = Field(default_factory=list)
+
+
 class BriefingResponse(BaseModel):
     startup_name: str
     generated_at: datetime
     recommendation_count: int
     markdown: str
+    flight_plan: FlightPlanResponse = Field(
+        default_factory=FlightPlanResponse,
+    )
+
 
 class FullAnalysisResponse(BaseModel):
     analysis_id: str
@@ -140,6 +163,7 @@ class FullAnalysisResponse(BaseModel):
     nvidia_context: NvidiaContextResponse
     recommendations: RecommendationResponse
     briefing: BriefingResponse
+
 
 class StartupHistoryItem(BaseModel):
     startup_id: str

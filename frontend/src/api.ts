@@ -204,3 +204,21 @@ export async function getAnalysis(
 
   return response.json();
 }
+
+export async function downloadAnalysisPdf(
+  analysisId: string,
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_URL}/analyses/${analysisId}/report.pdf`,
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(
+      error?.detail || "Não foi possível gerar o relatório em PDF.",
+    );
+  }
+
+  return response.blob();
+}
